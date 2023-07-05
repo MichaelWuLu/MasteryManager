@@ -6,7 +6,7 @@ def get_summoner_icon(profileIconId):
     result = requests.get(request)
     print(result)
 
-    with open(f"temp/icon{profileIconId}.jpg", "wb") as f:
+    with open(f"temp/icons/icon{profileIconId}.jpg", "wb") as f:
         f.write(result.content)
 
 
@@ -15,5 +15,5 @@ def get_champion_square(championId):
     response = requests.get(request)
     print(response)
 
-    with open(f"temp/champ{championId}.jpg", "wb") as f:
+    with open(f"temp/champions/champ{championId}.jpg", "wb") as f:
         f.write(response.content)
