@@ -1,3 +1,8 @@
 api_info.py
 .env
-temp
+temp/mastery.json
+temp/summonerName.json
+temp/champions/*
+temp/icons/*
+ToDo.txt
+__pycache__/
