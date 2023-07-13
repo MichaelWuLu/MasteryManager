@@ -1,0 +1,21 @@
+v1.0 - functional
+- add champion names to layout
+- allow app to run without a summoner name, with blank layout
+- store screen location when closed and open in same location
+
+v1.1 - functional
+- allow update of window without closing and reopening
+- allow sorting of mastery data
+- allow filtering of mastery data
+
+v2.0 - pretty
+- layout body to contain pictures as described here:
+    - top row: 1 picture
+    - second row: 2 pictures
+    - third and subsequent rows: 4 pictures
+    - each picture should have the mastery level badge in the top left corner, badge should bleed out of the picture a bit
+    - each picture should have the champion name and mastery points below it
+    - each picture if between level 5 and 6 should have mastery token progression in the bottom right corner 
+- change entire GUI to be more visually appealing, perhaps matching the league client?
+- add a details window for each champion, accessible by clicking on the champion picture
+- add a settings window for changing the layout of the main window allowing both v1.0 and v2.0 layouts
