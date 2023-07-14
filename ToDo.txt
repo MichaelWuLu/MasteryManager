@@ -1,7 +1,5 @@
 v1.0 - functional
-- add champion names to layout
 - allow app to run without a summoner name, with blank layout
-- store screen location when closed and open in same location
 
 v1.1 - functional
 - allow update of window without closing and reopening

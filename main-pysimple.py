@@ -117,10 +117,29 @@ def update_champion_squares(window):
         window[f'-CHAMPION-{champ["championId"]}-'].update(data=champion_square)
 
 
+def load_window_location():
+    # Load window location from file
+    if os.path.exists('temp/window_location.json'):
+        with open('temp/window_location.json') as file:
+            window_location = json.load(file)
+        return window_location
+    
+def save_window_location(location):
+    # Save window location to file
+    window_location = location
+    with open('temp/window_location.json', 'w') as file:
+        json.dump(window_location, file)
+
+
 def run_app():
     # Run the app
     # Create window with layout from the create_layout() function
     window = update_window()
+
+    # Load window location from file
+    window_location = load_window_location()
+    if window_location:
+        window.move(window_location[0], window_location[1])
 
     # Load summoner icon in Header
     update_icon(window)
@@ -131,24 +150,37 @@ def run_app():
     # Event loop
     while True:
         event, values = window.read()
+        window_location = window.CurrentLocation()
         if event == sg.WINDOW_CLOSED:
             # End loop and close window
             break
+
         elif event == '-SUBMIT-':
             # Get all assets and update window
             get_all_assets(values['-INPUT-'])
+
+            save_window_location(window_location)
             window.close()
             window = update_window()
+            window.move(window_location[0], window_location[1])
+
             update_icon(window)
             update_champion_squares(window)
+
         elif event == '-UPDATE-':
             # Update window with potential new assets
             summoner_data = load_data_from_json('summoner_data')
             get_all_assets(summoner_data['name'])
+
+            save_window_location(window_location)
             window.close()
             window = update_window()
+            window.move(window_location[0], window_location[1])
+
             update_icon(window)
             update_champion_squares(window)
+        
+        
 
     window.close()
     
