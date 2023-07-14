@@ -12,33 +12,33 @@ champion_square_size = 50, 50
 
 def get_all_assets(summonerName):
     # Get summonerName.json containing the correct summoners information
-    if not os.path.exists('temp/summonerName.json'):
+    if not os.path.exists('MasteryManager/temp/summonerName.json'):
         get_by_summoner_name(summonerName)
     else:
-        with open('temp/summonerName.json') as file:
+        with open('MasteryManager/temp/summonerName.json') as file:
             summoner_data = json.load(file)
         if summoner_data['name'] != summonerName:
             get_by_summoner_name(summonerName)
 
     # Get summoner icon if it doesn't exist
-    profileIconId = get_value_from_json('temp/summonerName.json', 'profileIconId')
-    if not os.path.exists(f'temp/icons/icon{profileIconId}.jpg'):
+    profileIconId = get_value_from_json('MasteryManager/temp/summonerName.json', 'profileIconId')
+    if not os.path.exists(f'MasteryManager/temp/icons/icon{profileIconId}.jpg'):
         get_summoner_icon(profileIconId)
     
     # Get/Update mastery.json containing the summoners mastery information
     get_mastery_by_summoner_id()
     # Get champion squares if they don't exist
-    with open('temp/mastery.json') as file:
+    with open('MasteryManager/temp/mastery.json') as file:
         mastery_data = json.load(file)
     for champ in mastery_data:
-        if not os.path.exists(f"temp/champions/champ{champ['championId']}.jpg"):
+        if not os.path.exists(f"MasteryManager/temp/champions/champ{champ['championId']}.jpg"):
             get_champion_square(champ['championId'])
 
 
 def load_data_from_json(wanted_data):
-    if wanted_data == ('summoner_data') and os.path.exists('temp/summonerName.json'):
+    if wanted_data == ('summoner_data') and os.path.exists('MasteryManager/temp/summonerName.json'):
         # Load summonerName.json and mastery.json
-        with open('temp/summonerName.json') as file:
+        with open('MasteryManager/temp/summonerName.json') as file:
             summoner_data = json.load(file)
         return summoner_data
     elif wanted_data == ('summoner_data'):
@@ -49,8 +49,8 @@ def load_data_from_json(wanted_data):
         
         return summoner_data
 
-    if wanted_data == ('mastery_data') and os.path.exists('temp/mastery.json'):
-        with open('temp/mastery.json') as file:
+    if wanted_data == ('mastery_data') and os.path.exists('MasteryManager/temp/mastery.json'):
+        with open('MasteryManager/temp/mastery.json') as file:
             mastery_data = json.load(file)
             mastery_data = sorted(mastery_data, key=lambda k: (k['championLevel'], k['championPoints']), 
                                   reverse=True)
@@ -76,10 +76,10 @@ def create_layout():
     input_layout = [
         [sg.Input(size=(15, 1), key='-INPUT-'), # Input field
          sg.Button('', key='-SUBMIT-', 
-                   image_source='MasterieManager/MasteryManager/images/magnifying_glass_icon.png', 
+                   image_source='MasteryManager/images/magnifying_glass_icon.png', 
                    image_size=(25, 25), tooltip="Finding new Summoner"), # Submit button
          sg.Button('', key='-UPDATE-', 
-                   image_source='MasterieManager/MasteryManager/images/refresh_icon.png', 
+                   image_source='MasteryManager/images/refresh_icon.png', 
                    image_size=(25, 25), tooltip="Update current summoner") # Update button
          ]]
 
@@ -119,9 +119,9 @@ def update_icon(window):
     # Update summoner icon
     summoner_data = load_data_from_json('summoner_data')
     if summoner_data['profileIconId'] == 0:
-        summoner_icon = Image.open('MasterieManager/MasteryManager/images/icon0.jpg')
+        summoner_icon = Image.open('MasteryManager/images/icon0.jpg')
     else:
-        summoner_icon = Image.open(f'temp/icons/icon{summoner_data["profileIconId"]}.jpg')
+        summoner_icon = Image.open(f'MasteryManager/temp/icons/icon{summoner_data["profileIconId"]}.jpg')
     summoner_icon = summoner_icon.resize(Icon_size)
     summoner_icon = ImageTk.PhotoImage(summoner_icon)
     window['-ICON-'].update(data=summoner_icon)
@@ -134,7 +134,7 @@ def update_champion_squares(window):
     for champ in mastery_data:
         if champ["championId"] == 0:
             continue
-        champion_square = Image.open(f'temp/champions/champ{champ["championId"]}.jpg')
+        champion_square = Image.open(f'MasteryManager/temp/champions/champ{champ["championId"]}.jpg')
         champion_square = champion_square.resize(champion_square_size)
         champion_square = ImageTk.PhotoImage(champion_square)
         window[f'-CHAMPION-{champ["championId"]}-'].update(data=champion_square)
@@ -142,15 +142,15 @@ def update_champion_squares(window):
 
 def load_window_location():
     # Load window location from file
-    if os.path.exists('temp/window_location.json'):
-        with open('temp/window_location.json') as file:
+    if os.path.exists('MasteryManager/temp/window_location.json'):
+        with open('MasteryManager/temp/window_location.json') as file:
             window_location = json.load(file)
         return window_location
     
 def save_window_location(location):
     # Save window location to file
     window_location = location
-    with open('temp/window_location.json', 'w') as file:
+    with open('MasteryManager/temp/window_location.json', 'w') as file:
         json.dump(window_location, file)
 
 
