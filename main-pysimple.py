@@ -1,7 +1,7 @@
 import PySimpleGUI as sg
 import json
 import os
-from PIL import Image, ImageTk, ImagePath
+from PIL import Image, ImageTk
 from get_assets import get_summoner_icon, get_champion_square
 from riot_api import get_by_summoner_name, get_mastery_by_summoner_id, get_value_from_json, get_mastery_score_by_calculation
 
@@ -79,7 +79,7 @@ def create_layout():
         [   # Body, containing all champion mastery data
             sg.Column([[
                 sg.Image(size=champion_square_size, key=f'-CHAMPION-{champ["championId"]}-'),
-                sg.Text(f'Name', font=('Helvetica', 12)),
+                sg.Text(champ['championName'], font=('Helvetica', 12)),
                 sg.Text(f'Level: {champ["championLevel"]}', font=('Helvetica', 12)),
                 sg.Text(f'Points: {champ["championPoints"]}', font=('Helvetica', 12)),
             ] for champ in mastery_data], scrollable=True, size=(400, 600), key='-MASTERY-')
