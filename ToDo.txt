@@ -1,6 +1,3 @@
-v1.0 - functional
-- allow app to run without a summoner name, with blank layout
-
 v1.1 - functional
 - allow update of window without closing and reopening
 - allow sorting of mastery data

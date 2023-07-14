@@ -36,17 +36,33 @@ def get_all_assets(summonerName):
 
 
 def load_data_from_json(wanted_data):
-    if wanted_data == ('summoner_data'):
+    if wanted_data == ('summoner_data') and os.path.exists('temp/summonerName.json'):
         # Load summonerName.json and mastery.json
         with open('temp/summonerName.json') as file:
             summoner_data = json.load(file)
         return summoner_data
+    elif wanted_data == ('summoner_data'):
+        summoner_data = {
+            'name': 'SummonerName', 
+            'profileIconId': 0
+            }
+        
+        return summoner_data
 
-    if wanted_data == ('mastery_data'):
+    if wanted_data == ('mastery_data') and os.path.exists('temp/mastery.json'):
         with open('temp/mastery.json') as file:
             mastery_data = json.load(file)
             mastery_data = sorted(mastery_data, key=lambda k: (k['championLevel'], k['championPoints']), 
                                   reverse=True)
+        return mastery_data
+    elif wanted_data == ('mastery_data'):
+        mastery_data = [
+            {'championId': 0, 
+             'championName': 'No mastery data found',
+             'championLevel': 0,
+             'championPoints': 0
+            }
+        ]
         return mastery_data
 
 
@@ -70,19 +86,21 @@ def create_layout():
     layout = [ 
         [   # Header, containing summoner name, mastery score and input field with buttons
             sg.Image(size=(Icon_size), key='-ICON-'),
-            sg.Column([[
-                (sg.Text(summoner_data['name'], font=('Helvetica', 20)) 
-                if i == 0 else sg.Text(f"Mastery lvl: {get_mastery_score_by_calculation()}"))
+            sg.Column([
+                [
+                (sg.Text(summoner_data['name'], font=('Helvetica', 15)) if i == 0 
+                 else sg.Text(f"Mastery lvl: {get_mastery_score_by_calculation()}")) 
             ] for i in range(2)], key='-SUMMONER-'),
             sg.Column(input_layout, element_justification='right', expand_x=True)
         ],
         [   # Body, containing all champion mastery data
-            sg.Column([[
+            sg.Column([
+                [
                 sg.Image(size=champion_square_size, key=f'-CHAMPION-{champ["championId"]}-'),
                 sg.Text(champ['championName'], font=('Helvetica', 12)),
                 sg.Text(f'Level: {champ["championLevel"]}', font=('Helvetica', 12)),
-                sg.Text(f'Points: {champ["championPoints"]}', font=('Helvetica', 12)),
-            ] for champ in mastery_data], scrollable=True, size=(400, 600), key='-MASTERY-')
+                sg.Text(f'Points: {champ["championPoints"]}', font=('Helvetica', 12))
+            ] for champ in mastery_data], scrollable=True, vertical_scroll_only=True, key='-MASTERY-', expand_x=True, size=(None, 500))
         ]
     ]
 
@@ -100,7 +118,10 @@ def update_icon(window):
     global Icon_size
     # Update summoner icon
     summoner_data = load_data_from_json('summoner_data')
-    summoner_icon = Image.open(f'temp/icons/icon{summoner_data["profileIconId"]}.jpg')
+    if summoner_data['profileIconId'] == 0:
+        summoner_icon = Image.open('MasterieManager/MasteryManager/images/icon0.jpg')
+    else:
+        summoner_icon = Image.open(f'temp/icons/icon{summoner_data["profileIconId"]}.jpg')
     summoner_icon = summoner_icon.resize(Icon_size)
     summoner_icon = ImageTk.PhotoImage(summoner_icon)
     window['-ICON-'].update(data=summoner_icon)
@@ -111,6 +132,8 @@ def update_champion_squares(window):
     # Update champion squares
     mastery_data = load_data_from_json('mastery_data')
     for champ in mastery_data:
+        if champ["championId"] == 0:
+            continue
         champion_square = Image.open(f'temp/champions/champ{champ["championId"]}.jpg')
         champion_square = champion_square.resize(champion_square_size)
         champion_square = ImageTk.PhotoImage(champion_square)

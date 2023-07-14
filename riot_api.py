@@ -25,6 +25,8 @@ def get_value_from_json(file, key):
 
 
 def get_mastery_score_by_calculation():
+    if not os.path.exists('temp/mastery.json'):
+        return 0
     with open('temp/mastery.json', 'r') as json_file:
         data = json.load(json_file)
         cumulative = 0
