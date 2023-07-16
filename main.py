@@ -4,7 +4,7 @@ import os
 from PIL import Image, ImageTk
 from get_assets import get_summoner_icon, get_champion_square
 from riot_api import get_by_summoner_name, get_mastery_by_summoner_id, get_value_from_json, get_mastery_score_by_calculation
-
+from misc import scale_images, assemble_image
 
 Icon_size = 64, 64
 champion_square_size = 50, 50
@@ -46,15 +46,21 @@ def load_data_from_json(wanted_data):
             'name': 'SummonerName', 
             'profileIconId': 0
             }
-        
         return summoner_data
 
     if wanted_data == ('mastery_data') and os.path.exists('MasteryManager/temp/mastery.json'):
         with open('MasteryManager/temp/mastery.json') as file:
             mastery_data = json.load(file)
+
+            # temporary filter for displaying mastery level 4 and blow first
+            #for champ in mastery_data:
+             #   if champ['championLevel'] > 4:
+              #      champ['championLevel'] = 0
+
             mastery_data = sorted(mastery_data, key=lambda k: (k['championLevel'], k['championPoints']), 
                                   reverse=True)
         return mastery_data
+    
     elif wanted_data == ('mastery_data'):
         mastery_data = [
             {'championId': 0, 
@@ -66,18 +72,19 @@ def load_data_from_json(wanted_data):
         return mastery_data
 
 
-def create_layout():
+def create_layout(mastery_data=None):
     global Icon_size
     global champion_square_size
     # Create GUI layout for PySimpleGUI
     summoner_data = load_data_from_json('summoner_data')
-    mastery_data = load_data_from_json('mastery_data')
+    if not mastery_data:
+        mastery_data = load_data_from_json('mastery_data')
 
     input_layout = [
         [sg.Input(size=(15, 1), key='-INPUT-'), # Input field
          sg.Button('', key='-SUBMIT-', 
                    image_source='MasteryManager/images/magnifying_glass_icon.png', 
-                   image_size=(25, 25), tooltip="Finding new Summoner"), # Submit button
+                   image_size=(25, 25), tooltip="Finding new Summoner", bind_return_key=True), # Submit button
          sg.Button('', key='-UPDATE-', 
                    image_source='MasteryManager/images/refresh_icon.png', 
                    image_size=(25, 25), tooltip="Update current summoner") # Update button
@@ -88,18 +95,23 @@ def create_layout():
             sg.Image(size=(Icon_size), key='-ICON-'),
             sg.Column([
                 [
-                (sg.Text(summoner_data['name'], font=('Helvetica', 15)) if i == 0 
+                (sg.Text(summoner_data['name'], font=('Helvetica', 15), key='-SUMMONER NAME-', auto_size_text=True) if i == 0 
                  else sg.Text(f"Mastery lvl: {get_mastery_score_by_calculation()}")) 
             ] for i in range(2)], key='-SUMMONER-'),
             sg.Column(input_layout, element_justification='right', expand_x=True)
         ],
+        [
+            sg.Combo(['Remove lv 7', 'Remove lv >5', 'Remove lv >4'], default_value='Filter', enable_events=True, key='-FILTER-', readonly=True),
+            sg.Combo(['By level, highest first', 'By level, lowest first', 'By points, highest first', 'By points, lowest first'], default_value='Sort', enable_events=True, key='-SORT-', readonly=True),
+            sg.Button('Clear filters', key='-CLEAR-')
+        ],
         [   # Body, containing all champion mastery data
             sg.Column([
                 [
-                sg.Image(size=champion_square_size, key=f'-CHAMPION-{champ["championId"]}-'),
-                sg.Text(champ['championName'], font=('Helvetica', 12)),
-                sg.Text(f'Level: {champ["championLevel"]}', font=('Helvetica', 12)),
-                sg.Text(f'Points: {champ["championPoints"]}', font=('Helvetica', 12))
+                sg.Image(size=champion_square_size, key=f'-CHAMPION-{int(champ["championId"])}-'),
+                sg.Text(str(champ['championName']), font=('Helvetica', 12)),
+                sg.Text(f'Level: {str(champ["championLevel"])}', font=('Helvetica', 12)),
+                sg.Text(f'Points: {str(champ["championPoints"])}', font=('Helvetica', 12))
             ] for champ in mastery_data], scrollable=True, vertical_scroll_only=True, key='-MASTERY-', expand_x=True, size=(None, 500))
         ]
     ]
@@ -107,9 +119,27 @@ def create_layout():
     return layout
 
 
-def update_window():
+def update_column(mastery_data):
+    # Update the column containing all champion mastery data
+    layout = sg.Column([
+                [
+                sg.Image(size=champion_square_size, key=f'-CHAMPION-{champ["championId"]}-'),
+                sg.Text(champ['championName'], font=('Helvetica', 12)),
+                sg.Text(f'Level: {champ["championLevel"]}', font=('Helvetica', 12)),
+                sg.Text(f'Points: {champ["championPoints"]}', font=('Helvetica', 12))
+            ] for champ in mastery_data], scrollable=True, vertical_scroll_only=True, key='-MASTERY-', expand_x=True, size=(None, 500))
+    
+    return layout
+    
+
+
+
+def update_window(mastery_data=None):
     # Create/Update window with new layout
-    layout = create_layout()
+    if mastery_data:
+        layout = create_layout(mastery_data)
+    else:
+        layout = create_layout()
     window = sg.Window('Mastery Manager', layout, finalize=True)
     return window
 
@@ -127,13 +157,19 @@ def update_icon(window):
     window['-ICON-'].update(data=summoner_icon)
 
 
-def update_champion_squares(window):
+def update_champion_squares(window, mastery_data=None):
     global champion_square_size
     # Update champion squares
-    mastery_data = load_data_from_json('mastery_data')
+    if not mastery_data:
+        mastery_data = load_data_from_json('mastery_data')
+
     for champ in mastery_data:
         if champ["championId"] == 0:
             continue
+
+        #assemble_image(champ["championId"], champ["championLevel"])
+        #champion_square = Image.open(f'MasteryManager/temp/champions/assembled_champ{champ["championId"]}.jpg')
+
         champion_square = Image.open(f'MasteryManager/temp/champions/champ{champ["championId"]}.jpg')
         champion_square = champion_square.resize(champion_square_size)
         champion_square = ImageTk.PhotoImage(champion_square)
@@ -173,16 +209,64 @@ def run_app():
     # Event loop
     while True:
         event, values = window.read()
-        window_location = window.CurrentLocation()
         if event == sg.WINDOW_CLOSED:
             # End loop and close window
             break
 
-        elif event == '-SUBMIT-':
+        elif (event == '-SUBMIT-' and values['-INPUT-'] != '') or event == '-UPDATE-':
             # Get all assets and update window
-            get_all_assets(values['-INPUT-'])
+            if event == '-SUBMIT-':
+                get_all_assets(values['-INPUT-'])
+            
+            elif event == '-UPDATE-':
+                summoner_data = load_data_from_json('summoner_data')
+                get_all_assets(summoner_data['name'])
 
+            window_location = window.CurrentLocation()
             save_window_location(window_location)
+            scroll_position = window['-MASTERY-'].Widget.canvas.yview()[0]
+            window.close()
+            window = update_window()
+            window.move(window_location[0], window_location[1])
+
+            update_icon(window)
+            update_champion_squares(window)
+            if event == '-UPDATE-':
+                window['-MASTERY-'].Widget.canvas.yview_moveto(scroll_position)
+        
+        elif event == '-FILTER-' or event == '-SORT-':
+            mastery_data = load_data_from_json('mastery_data')
+            if values['-FILTER-'] == 'Remove lv 7':
+                mastery_data = [champ for champ in mastery_data if champ['championLevel'] != 7]
+
+            elif values['-FILTER-'] == 'Remove lv >5':
+                mastery_data = [champ for champ in mastery_data if champ['championLevel'] <= 5]
+
+            elif values['-FILTER-'] == 'Remove lv >4':
+                mastery_data = [champ for champ in mastery_data if champ['championLevel'] <= 4]
+            
+            elif values['-SORT-'] == 'By level, highest first':
+                mastery_data = sorted(mastery_data, key=lambda k: k['championLevel'], reverse=True)
+
+            elif values['-SORT-'] == 'By level, lowest first':
+                mastery_data = sorted(mastery_data, key=lambda k: k['championLevel'])
+            
+            elif values['-SORT-'] == 'By points, highest first':
+                mastery_data = sorted(mastery_data, key=lambda k: k['championPoints'], reverse=True)
+
+            elif values['-SORT-'] == 'By points, lowest first':
+                mastery_data = sorted(mastery_data, key=lambda k: k['championPoints'])
+            
+
+            window.close()
+            window = update_window(mastery_data)
+            window.move(window_location[0], window_location[1])
+
+            update_icon(window)
+            update_champion_squares(window, mastery_data)
+
+        elif event == '-CLEAR-':
+            print('Filters cleared')
             window.close()
             window = update_window()
             window.move(window_location[0], window_location[1])
@@ -190,20 +274,6 @@ def run_app():
             update_icon(window)
             update_champion_squares(window)
 
-        elif event == '-UPDATE-':
-            # Update window with potential new assets
-            summoner_data = load_data_from_json('summoner_data')
-            get_all_assets(summoner_data['name'])
-
-            save_window_location(window_location)
-            window.close()
-            window = update_window()
-            window.move(window_location[0], window_location[1])
-
-            update_icon(window)
-            update_champion_squares(window)
-        
-        
 
     window.close()
     

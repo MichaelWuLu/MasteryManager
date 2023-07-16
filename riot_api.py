@@ -13,6 +13,10 @@ def get_by_summoner_name(summonerName):
     response = requests.get(request)
     print(f"Get summoner: {response}")
 
+    # If summonerName doesn't exist, return 404
+    if response.status_code == 404:
+        return 404
+
     if not os.path.exists('MasteryManager/temp/'):
         os.makedirs('MasteryManager/temp/')
 

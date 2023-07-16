@@ -1,11 +1,7 @@
 v1.1 - functional
-- allow sorting of mastery data
-- allow filtering of mastery data
 - add some indicator for fetching images
-- allow hitting Enter on the keyboard to act as submit button.
 
 v2.0 - pretty
-- allow update of window without closing and reopening
 - layout body to contain pictures as described here:
     - top row: 1 picture
     - second row: 2 pictures
