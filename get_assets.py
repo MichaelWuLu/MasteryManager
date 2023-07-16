@@ -5,7 +5,6 @@ import os
 def get_summoner_icon(profileIconId):
     request = f"https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/profile-icons/{profileIconId}.jpg"
     response = requests.get(request)
-    print(f"Get icon: {response}")
 
     if not os.path.exists(f"MasteryManager/temp/icons"):
         os.makedirs(f"MasteryManager/temp/icons")
@@ -17,7 +16,6 @@ def get_summoner_icon(profileIconId):
 def get_champion_square(championId):
     request = f"https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/champion-tiles/{championId}/{championId}000.jpg"
     response = requests.get(request)
-    print(f"Get champ {championId}: {response}")
 
     if not os.path.exists(f"MasteryManager/temp/champions"):
         os.makedirs(f"MasteryManager/temp/champions")

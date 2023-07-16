@@ -38,8 +38,3 @@ def assemble_image(championId:int, masteryLevel:int):
         
         # save image
         new_img.convert('RGB').save(f'MasteryManager/temp/champions/assembled_{file}', 'JPEG')
-        
-
-
-
-

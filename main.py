@@ -4,7 +4,6 @@ import os
 from PIL import Image, ImageTk
 from get_assets import get_summoner_icon, get_champion_square
 from riot_api import get_by_summoner_name, get_mastery_by_summoner_id, get_value_from_json, get_mastery_score_by_calculation
-from misc import scale_images, assemble_image
 
 Icon_size = 64, 64
 champion_square_size = 50, 50
@@ -30,6 +29,7 @@ def get_all_assets(summonerName):
     # Get champion squares if they don't exist
     with open('MasteryManager/temp/mastery.json') as file:
         mastery_data = json.load(file)
+
     for champ in mastery_data:
         if not os.path.exists(f"MasteryManager/temp/champions/champ{champ['championId']}.jpg"):
             get_champion_square(champ['championId'])
@@ -186,16 +186,37 @@ def load_window_location():
 def save_window_location(location):
     # Save window location to file
     window_location = location
+    if not os.path.exists('MasteryManager/temp'):
+        os.makedirs('MasteryManager/temp')
     with open('MasteryManager/temp/window_location.json', 'w') as file:
         json.dump(window_location, file)
 
 
+def loading_screen(window=None, start=None, stop=None, window_location=None):
+    if start:
+        # Create loading screen
+        layout = [
+            [sg.Text('Loading...', font=('Helvetica', 60))]
+        ]
+        loading_window = sg.Window('Mastery Manager - Loading', layout, finalize=True)
+
+        loading_window.move(window_location[0], window_location[1])
+
+        event, values = loading_window.read(timeout=0)
+
+        return loading_window
+    
+    if stop:
+        # Close loading screen
+        window.close()
+
+
+# Run the app
 def run_app():
-    # Run the app
     # Create window with layout from the create_layout() function
     window = update_window()
 
-    # Load window location from file
+    # Load window location from file and move window if possible
     window_location = load_window_location()
     if window_location:
         window.move(window_location[0], window_location[1])
@@ -208,34 +229,54 @@ def run_app():
 
     # Event loop
     while True:
+        # Read events and values from window
         event, values = window.read()
+
+        # End loop if window is closed
         if event == sg.WINDOW_CLOSED:
-            # End loop and close window
             break
 
+        # Update window if input is given or update button is pressed
         elif (event == '-SUBMIT-' and values['-INPUT-'] != '') or event == '-UPDATE-':
-            # Get all assets and update window
+            # store window location and save to file
+            window_location = window.CurrentLocation()
+            save_window_location(window_location)
+
+            # Create loading screen
+            loading_window = loading_screen(start=True, window_location=window_location)
+
+            # Get all assets based on input
             if event == '-SUBMIT-':
                 get_all_assets(values['-INPUT-'])
-            
             elif event == '-UPDATE-':
                 summoner_data = load_data_from_json('summoner_data')
                 get_all_assets(summoner_data['name'])
-
-            window_location = window.CurrentLocation()
-            save_window_location(window_location)
+            
+            # Close loading screen
+            loading_screen(loading_window, stop=True)
+            
+            # Save scroll position in mastery column
             scroll_position = window['-MASTERY-'].Widget.canvas.yview()[0]
+
+            # close and update window, moving it to the same location as before
             window.close()
             window = update_window()
             window.move(window_location[0], window_location[1])
 
+            # Load summoner icon in Header and champion squares in Body
             update_icon(window)
             update_champion_squares(window)
+
+            # Scroll to the same position as before if Update was pressed
             if event == '-UPDATE-':
                 window['-MASTERY-'].Widget.canvas.yview_moveto(scroll_position)
         
+        # Applie filter or sort mastery data
         elif event == '-FILTER-' or event == '-SORT-':
+            # load mastery data from file
             mastery_data = load_data_from_json('mastery_data')
+
+            # apply filter or sort
             if values['-FILTER-'] == 'Remove lv 7':
                 mastery_data = [champ for champ in mastery_data if champ['championLevel'] != 7]
 
@@ -257,24 +298,28 @@ def run_app():
             elif values['-SORT-'] == 'By points, lowest first':
                 mastery_data = sorted(mastery_data, key=lambda k: k['championPoints'])
             
-
+            # close and update window, moving it to the same location as before
             window.close()
             window = update_window(mastery_data)
             window.move(window_location[0], window_location[1])
 
+            # Load summoner icon in Header and champion squares in Body
             update_icon(window)
             update_champion_squares(window, mastery_data)
 
+        # Clear filters and sort restoring the window to its original state
         elif event == '-CLEAR-':
             print('Filters cleared')
+            # close and update window, moving it to the same location as before
             window.close()
             window = update_window()
             window.move(window_location[0], window_location[1])
-
+            
+            # Load summoner icon in Header and champion squares in Body
             update_icon(window)
             update_champion_squares(window)
 
-
+    # Close window and end application
     window.close()
     
 
