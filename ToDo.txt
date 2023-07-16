@@ -1,6 +1,3 @@
-v1.1 - functional
-- add some indicator for fetching images
-
 v2.0 - pretty
 - layout body to contain pictures as described here:
     - top row: 1 picture
@@ -12,3 +9,4 @@ v2.0 - pretty
 - change entire GUI to be more visually appealing, perhaps matching the league client?
 - add a details window for each champion, accessible by clicking on the champion picture
 - add a settings window for changing the layout of the main window allowing both v1.0 and v2.0 layouts
+- allow selecting of region, with default as EUW
