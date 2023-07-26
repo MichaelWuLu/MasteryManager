@@ -105,9 +105,15 @@ def create_layout(mastery_data=None, version=version):
     ]
     
     filters_and_sort = [
-        sg.Combo(['Remove lv 7', 'Remove lv >5', 'Remove lv >4'], default_value='Filter', enable_events=True, key='-FILTER-', readonly=True),
-        sg.Combo(['By level, highest first', 'By level, lowest first', 'By points, highest first', 'By points, lowest first'], default_value='Sort', enable_events=True, key='-SORT-', readonly=True),
-        sg.Button('Clear filters', key='-CLEAR-')
+        [
+            sg.Combo(['Remove lv 7', 'Remove lv >5', 'Remove lv >4'], default_value='Filter', enable_events=True, key='-FILTER-', readonly=True),
+            sg.Combo(['By level, highest first', 'By level, lowest first', 'By points, highest first', 'By points, lowest first'], default_value='Sort', enable_events=True, key='-SORT-', readonly=True),
+            sg.Button('Clear filters', key='-CLEAR-')
+        ],
+        [
+            sg.Text('Search for champ by name:', font=('Helvetica', 12), key='-FILTER-TEXT-'),
+            sg.Input(size=(25, 1), key='-FILTER-INPUT-', enable_events=True),
+        ]
     ]
     
     body_v_1_0 = [   # Body, containing all champion mastery data
@@ -120,28 +126,31 @@ def create_layout(mastery_data=None, version=version):
         ] for champ in mastery_data], scrollable=True, vertical_scroll_only=True, key='-MASTERY-', expand_x=True, size=(None, 500))
     ]
     """
-    champion_data = load_data_from_json(champion_data)
+    champion_data = load_data_from_json('mastery_data')
 
-    body_v_1_2 = [   # Body, containing all champion mastery data
-        sg.Button('Testing', key='-TEST-'),
-        sg.Column([
-            ([
+    champion_list = []
+    for champ in champion_data:
+        x = [
                 sg.Image(size=champion_square_size, key=f'-CHAMPION-{int(champ["championId"])}-IMAGE-', visible=False),
                 sg.Text(str(champ['championName']), font=('Helvetica', 12), key=f'-CHAMPION-{int(champ["championId"])}-NAME-', visible=False),
                 sg.Text(f'Level: ', font=('Helvetica', 12), key=f'-CHAMPION-{int(champ["championId"])}-LEVEL-', visible=False),
                 sg.Text(f'Points: ', font=('Helvetica', 12), key=f'-CHAMPION-{int(champ["championId"])}-POINTS-', visible=False)
-            ] for champ in champion_data), # add closing bracket here
-            [sg.Text('test', visible=False)]
-        ], scrollable=True, vertical_scroll_only=True, key='-MASTERY-', expand_x=True, size=(None, 500))
+            ]
+        champion_list.append(x)
+
+    body_v_1_2 = [   # Body, containing all champion mastery data
+        sg.Button('Testing', key='-TEST-'),
+        sg.Column([champion_list],scrollable=True),
+        sg.Text('Test')
     ]"""
-    
+
     layout.append(header)
     layout.append(filters_and_sort)
     if version == 'v1.1':
         layout.append(body_v_1_0)
         
     #elif version == 'v1.2':
-        #layout.append(body_v_1_2)
+     #   layout.append(body_v_1_2)
 
 
     return layout
@@ -235,7 +244,6 @@ def loading_screen(window=None, start=None, stop=None, window_location=None):
     if stop:
         # Close loading screen
         window.close()
-
 
 # Run the app
 def run_app():
@@ -343,17 +351,33 @@ def run_app():
             
             # Load summoner icon in Header and champion squares in Body
             update_icon(window)
-            update_champion_squares(window)
+            update_champion_squares(window)         
 
-            #window['-CHAMPION-81-POINTS-'].update('111111')
-         
-        elif event == '-TEST-':
+        # Filter champion names based on input
+        elif event == '-FILTER-INPUT-':
+            mastery_data = load_data_from_json('mastery_data')
             for champ in mastery_data:
-                window[f"-CHAMPION-{champ['championId']}-IMAGE-"].update(visible=True)
-                window[f"-CHAMPION-{champ['championId']}-NAME-"].update(visible=True)                
-                window[f"-CHAMPION-{champ['championId']}-LEVEL-"].update(f"Level: {champ['championLevel']}", visible=True)
-                window[f"-CHAMPION-{champ['championId']}-POINTS-"].update(f"Level: {champ['championPoints']}", visible=True)
 
+                if values['-FILTER-INPUT-'].lower() not in champ['championName'].lower():
+                    #window[f"-CHAMPION-{champ['championId']}-IMAGE-"].update(visible=False)
+                    window[f"-CHAMPION-{champ['championId']}-IMAGE-"].hide_row()
+                    #window[f"-CHAMPION-{champ['championId']}-NAME-"].update(visible=False)
+                    window[f"-CHAMPION-{champ['championId']}-NAME-"].hide_row()            
+                    #window[f"-CHAMPION-{champ['championId']}-LEVEL-"].update(visible=False)
+                    window[f"-CHAMPION-{champ['championId']}-LEVEL-"].hide_row()
+                    #window[f"-CHAMPION-{champ['championId']}-POINTS-"].update(visible=False)
+                    window[f"-CHAMPION-{champ['championId']}-POINTS-"].hide_row()
+
+                else:
+                    #window[f"-CHAMPION-{champ['championId']}-IMAGE-"].update(visible=True)
+                    window[f"-CHAMPION-{champ['championId']}-IMAGE-"].unhide_row()
+                    #window[f"-CHAMPION-{champ['championId']}-NAME-"].update(visible=True)
+                    window[f"-CHAMPION-{champ['championId']}-NAME-"].unhide_row()                
+                    #window[f"-CHAMPION-{champ['championId']}-LEVEL-"].update(visible=True)
+                    window[f"-CHAMPION-{champ['championId']}-LEVEL-"].unhide_row()
+                    #window[f"-CHAMPION-{champ['championId']}-POINTS-"].update(visible=True)
+                    window[f"-CHAMPION-{champ['championId']}-POINTS-"].unhide_row()
+    
     # Close window and end application
     window.close()
     

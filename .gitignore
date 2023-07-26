@@ -4,6 +4,6 @@ temp/summonerName.json
 temp/window_location.json
 temp/champions/*
 temp/icons/*
-
+test.py
 __pycache__/
 
