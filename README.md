@@ -1,2 +1,2 @@
 # MasteryManager
-A desktop widget for chamipon mastery in league of legends
+A website for viewing chamipon mastery in league of legends
