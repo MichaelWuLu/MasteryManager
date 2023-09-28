@@ -1,3 +1,5 @@
+# Description: This file contains all the functions that are used to get data from the Riot API.
+
 import requests
 import os
 from dotenv import load_dotenv
@@ -6,6 +8,7 @@ import json
 load_dotenv()  # loads variables from .env.
 
 
+# Get summoner by summonerName saving the response in a json file called summonerName.json
 def get_by_summoner_name(summonerName):
     api_key = os.getenv('API_KEY')
     api_url = f"https://euw1.api.riotgames.com/lol/summoner/v4/summoners/by-name/{summonerName}?api_key="
@@ -29,18 +32,6 @@ def get_value_from_json(file, key):
         data = json.load(json_file)
         output = data[key]
         return output
-
-
-def get_mastery_score_by_calculation():
-    if not os.path.exists('temp/mastery.json'):
-        return 0
-    with open('temp/mastery.json', 'r') as json_file:
-        data = json.load(json_file)
-        cumulative = 0
-        for dict in data:
-            lvl = dict['championLevel']
-            cumulative = cumulative + lvl
-        return cumulative
 
 
 def get_mastery_by_summoner_id():
@@ -104,3 +95,42 @@ def get_champion_json(league_version):
             exstacted_data.append(exstracted_item)
 
         json.dump(exstacted_data, json_file, indent=4)
+
+
+def load_data_from_json(wanted_data):
+    if wanted_data == ('summoner_data') and os.path.exists('temp/summonerName.json'):
+        # Load summonerName.json and mastery.json
+        with open('temp/summonerName.json') as file:
+            summoner_data = json.load(file)
+        return summoner_data
+    elif wanted_data == ('summoner_data'):
+        # return empty list if no summoner data is found
+        summoner_data = {
+            'name': 'SummonerName', 
+            'profileIconId': 0
+            }
+        return summoner_data
+
+    if wanted_data == ('mastery_data') and os.path.exists('temp/mastery.json'):
+        with open('temp/mastery.json') as file:
+            mastery_data = json.load(file)
+
+            # temporary filter for displaying mastery level 4 and blow first
+            #for champ in mastery_data:
+             #   if champ['championLevel'] > 4:
+              #      champ['championLevel'] = 0
+
+            mastery_data = sorted(mastery_data, key=lambda k: (k['championLevel'], k['championPoints']), 
+                                  reverse=True)
+        return mastery_data
+    
+    elif wanted_data == ('mastery_data'):
+        # return empty list if no mastery data is found
+        mastery_data = [
+            {'championId': 0, 
+             'championName': 'No mastery data found',
+             'championLevel': 0,
+             'championPoints': 0
+            }
+        ]
+        return mastery_data
