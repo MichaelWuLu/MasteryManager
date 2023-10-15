@@ -1,4 +1,5 @@
 .env
+env
 temp/mastery.json
 temp/summonerName.json
 temp/window_location.json
