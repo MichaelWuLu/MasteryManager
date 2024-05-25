@@ -3,49 +3,60 @@ import json
 import os
 from PIL import Image, ImageTk
 from get_assets import get_summoner_icon, get_champion_square
-from riot_api import get_by_summoner_name, get_mastery_by_summoner_id, get_value_from_json, get_mastery_score_by_calculation
+from riot_api import get_summoner_by_riot_id, get_mastery_by_puuid, get_value_from_json, get_mastery_score_by_calculation
 
 Icon_size = 64, 64
 champion_square_size = 50, 50
 version = 'v1.1'
 
 
-def get_all_assets(summonerName):
-    # Get summonerName.json containing the correct summoners information
-    if not os.path.exists('temp/summonerName.json'):
-        get_by_summoner_name(summonerName)
+def get_all_assets(riotId):
+    # Get summoner.json containing the correct summoners information
+    if not os.path.exists('temp/summoner.json'):
+        get_summoner_by_riot_id(riotId)
     else:
-        with open('temp/summonerName.json') as file:
-            summoner_data = json.load(file)
-        if summoner_data['name'] != summonerName:
-            get_by_summoner_name(summonerName)
+        with open('temp/riotId.json') as file:
+            riotIdData = json.load(file)
+        if riotId != f"{riotIdData['gameName']}#{riotIdData['tagLine']}":
+            get_summoner_by_riot_id(riotId)
 
     # Get summoner icon if it doesn't exist
-    profileIconId = get_value_from_json('temp/summonerName.json', 'profileIconId')
-    if not os.path.exists(f'temp/icons/icon{profileIconId}.jpg'):
+    profileIconId = get_value_from_json('temp/summoner.json', 'profileIconId')
+    if not os.path.exists(f'temp/icons/icon{profileIconId}.png'):
         get_summoner_icon(profileIconId)
     
     # Get/Update mastery.json containing the summoners mastery information
-    get_mastery_by_summoner_id()
+    get_mastery_by_puuid()
     # Get champion squares if they don't exist
     with open('temp/mastery.json') as file:
         mastery_data = json.load(file)
 
     for champ in mastery_data:
-        if not os.path.exists(f"temp/champions/champ{champ['championId']}.jpg"):
+        if not os.path.exists(f"temp/champions/champ{champ['championId']}.png"):
             get_champion_square(champ['championId'])
 
 
 def load_data_from_json(wanted_data):
-    if wanted_data == ('summoner_data') and os.path.exists('temp/summonerName.json'):
-        # Load summonerName.json and mastery.json
-        with open('temp/summonerName.json') as file:
+    if wanted_data == ('riotId_data') and os.path.exists('temp/riotId.json'):
+        # Load summoner.json
+        with open('temp/riotId.json') as file:
+            riotId_data = json.load(file)
+        return riotId_data
+    elif wanted_data == ('riotId_data'):
+        riotId_data = {
+            'gameName': 'Name'
+            }
+        return riotId_data
+    
+    if wanted_data == ('summoner_data') and os.path.exists('temp/summoner.json'):
+        # Load summoner.json
+        with open('temp/summoner.json') as file:
             summoner_data = json.load(file)
         return summoner_data
     elif wanted_data == ('summoner_data'):
         summoner_data = {
-            'name': 'SummonerName', 
-            'profileIconId': 0
+            'profileIconId': int(0),
+            'gameName': 'No summoner data found'
             }
         return summoner_data
 
@@ -77,7 +88,7 @@ def create_layout(mastery_data=None, version=version):
     global Icon_size
     global champion_square_size
     # Create GUI layout for PySimpleGUI
-    summoner_data = load_data_from_json('summoner_data')
+    riotId_data = load_data_from_json('riotId_data')
     champion_data = load_data_from_json('champion_data')
     if not mastery_data:
         mastery_data = load_data_from_json('mastery_data')
@@ -98,7 +109,7 @@ def create_layout(mastery_data=None, version=version):
         sg.Image(size=(Icon_size), key='-ICON-'),
         sg.Column([
             [
-            (sg.Text(summoner_data['name'], font=('Helvetica', 15), key='-SUMMONER NAME-', auto_size_text=True) if i == 0 
+            (sg.Text(riotId_data['gameName'], font=('Helvetica', 15), key='-SUMMONER NAME-', auto_size_text=True) if i == 0 
                 else sg.Text(f"Mastery lvl: {get_mastery_score_by_calculation()}", key='-MASTERY-SCOERE-')) 
         ] for i in range(2)], key='-SUMMONER-'),
         sg.Column(input_layout, element_justification='right', expand_x=True)
@@ -120,7 +131,7 @@ def create_layout(mastery_data=None, version=version):
         sg.Column([
             [
             sg.Image(size=champion_square_size, key=f'-CHAMPION-{int(champ["championId"])}-IMAGE-'),
-            sg.Text(str(champ['championName']), font=('Helvetica', 12), key=f'-CHAMPION-{int(champ["championId"])}-NAME-'),
+            sg.Text(str(champ['championId']), font=('Helvetica', 12), key=f'-CHAMPION-{int(champ["championId"])}-NAME-'),
             sg.Text(f'Level: {str(champ["championLevel"])}', font=('Helvetica', 12), key=f'-CHAMPION-{int(champ["championId"])}-LEVEL-'),
             sg.Text(f'Points: {str(champ["championPoints"])}', font=('Helvetica', 12), key=f'-CHAMPION-{int(champ["championId"])}-POINTS-')
         ] for champ in mastery_data], scrollable=True, vertical_scroll_only=True, key='-MASTERY-', expand_x=True, size=(None, 500))
@@ -203,9 +214,9 @@ def update_champion_squares(window, mastery_data=None):
             continue
 
         #assemble_image(champ["championId"], champ["championLevel"])
-        #champion_square = Image.open(f'temp/champions/assembled_champ{champ["championId"]}.jpg')
+        #champion_square = Image.open(f'temp/champions/assembled_champ{champ["championId"]}.png')
 
-        champion_square = Image.open(f'temp/champions/champ{champ["championId"]}.jpg')
+        champion_square = Image.open(f'temp/champions/champ{champ["championId"]}.png')
         champion_square = champion_square.resize(champion_square_size)
         champion_square = ImageTk.PhotoImage(champion_square)
         window[f'-CHAMPION-{champ["championId"]}-IMAGE-'].update(data=champion_square)
@@ -283,8 +294,8 @@ def run_app():
             if event == '-SUBMIT-':
                 get_all_assets(values['-INPUT-'])
             elif event == '-UPDATE-':
-                summoner_data = load_data_from_json('summoner_data')
-                get_all_assets(summoner_data['name'])
+                riotId_data = load_data_from_json('riotId_data')
+                get_all_assets(riotId_data['gameName'])
             
             # Close loading screen
             loading_screen(loading_window, stop=True)
