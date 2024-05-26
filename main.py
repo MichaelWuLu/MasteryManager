@@ -3,5 +3,5 @@ from get_assets import get_all_assets
 
 
 if __name__ == '__main__':
-    get_all_assets(summonerName='zaitoon')
+    get_all_assets(riotId='murzak#norge')
     

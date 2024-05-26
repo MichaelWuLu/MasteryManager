@@ -1,10 +1,6 @@
 env/
 .env
-temp/mastery.json
-temp/summonerName.json
-temp/window_location.json
-temp/champions/*
-temp/icons/*
+temp
 test.py
 __pycache__/
 

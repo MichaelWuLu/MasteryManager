@@ -1,4 +1,4 @@
-# Description: This file contains all the functions that are used to get data from the Riot API.
+# Description: This file contains all the functions used to get data from the Riot API and the community dragon.
 
 import requests
 import os
@@ -8,23 +8,51 @@ import json
 load_dotenv()  # loads variables from .env.
 
 
-# Get summoner by summonerName saving the response in a json file called summonerName.json
-def get_by_summoner_name(summonerName):
+# Get puuid by riotId (gameName#tagline) saving the response in a json file called riotId.json
+def get_puuid_by_riot_id(riotId, accountRegion='europe'):
+    gameName = riotId.split('#')[0]
+    tagLine = riotId.split('#')[1]
+
     api_key = os.getenv('API_KEY')
-    api_url = f"https://euw1.api.riotgames.com/lol/summoner/v4/summoners/by-name/{summonerName}?api_key="
+    api_url = f"https://{accountRegion}.api.riotgames.com/riot/account/v1/accounts/by-riot-id/{gameName}/{tagLine}?api_key="
     request = api_url + str(api_key)
     response = requests.get(request)
-    print(f"Get summoner: {response}")
+    print(f"Get puuid: {response}")
 
-    # If summonerName doesn't exist, return 404
+    # If riotId doesn't exist, return 404
     if response.status_code == 404:
         return 404
 
     if not os.path.exists('temp/'):
         os.makedirs('temp/')
 
-    with open('temp/summonerName.json', 'w') as json_file:
-        json.dump(response.json(), json_file, indent=4)
+    with open('temp/riotId.json', 'w') as file:
+        json.dump(response.json(), file, indent=4)
+
+
+def get_summoner_by_riot_id(riotId, leagueRegion='euw1'):
+    if not os.path.exists('temp/riotId.json'):
+        get_puuid_by_riot_id(riotId)
+    elif not get_value_from_json('temp/riotId.json', 'gameName') == riotId.split('#')[0]:
+        get_puuid_by_riot_id(riotId)
+    
+    puuid = get_value_from_json('temp/riotId.json', 'puuid')
+
+    api_key = os.getenv('API_KEY')
+    api_url = f"https://{leagueRegion}.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/{puuid}?api_key="
+    request = api_url + str(api_key)
+    response = requests.get(request)
+    print(f"Get summoner: {response}")
+
+    # If summoner doesn't exist, return 404
+    if response.status_code == 404:
+        return 404
+
+    if not os.path.exists('temp/'):
+        os.makedirs('temp/')
+
+    with open('temp/summoner.json', 'w') as file:
+        json.dump(response.json(), file, indent=4)
 
 
 def get_value_from_json(file, key):
@@ -34,14 +62,14 @@ def get_value_from_json(file, key):
         return output
 
 
-def get_mastery_by_summoner_id():
+def get_mastery_by_puuid():
     # Get latest league version
     league_version = requests.get('https://ddragon.leagueoflegends.com/api/versions.json').json()[0]
 
-    encryptedSummonerId = get_value_from_json('temp/summonerName.json', 'id')
+    puuid = get_value_from_json('temp/riotId.json', 'puuid')
 
     api_key = os.getenv('API_KEY')
-    api_url = f"https://euw1.api.riotgames.com/lol/champion-mastery/v4/champion-masteries/by-summoner/{encryptedSummonerId}?api_key="
+    api_url = f"https://euw1.api.riotgames.com/lol/champion-mastery/v4/champion-masteries/by-puuid/{puuid}?api_key="
     request = api_url + str(api_key)
     response = requests.get(request)
     print(f"Get Mastery: {response}")
@@ -50,17 +78,17 @@ def get_mastery_by_summoner_id():
         os.makedirs('temp/')
 
     get_champion_names()
-    with open(f'temp/champions/champion{league_version}.json', 'r') as json_file:
-        champion_names = json.load(json_file)
+    with open(f'temp/champions/champion{league_version}.json', 'r') as file:
+        champion_names = json.load(file)
 
-    with open('temp/mastery.json', 'w') as json_file:
+    with open('temp/mastery.json', 'w') as file:
         champions = response.json()
         for champ in champion_names:
             for mastery in champions:
-                if champ['championId'] == str(mastery['championId']):
+                if champ['championId'] == mastery['championId']:
                     mastery['championName'] = champ['championName']
 
-        json.dump(champions, json_file, indent=4)
+        json.dump(champions, file, indent=4)
 
 
 def get_champion_names():
@@ -98,34 +126,41 @@ def get_champion_json(league_version):
 
 
 def load_data_from_json(wanted_data):
+    if wanted_data == ('riotId_data') and os.path.exists('temp/riotId.json'):
+        # Load riotId.json
+        with open('temp/riotIdsummonerName.json') as file:
+            riotId_data = json.load(file)
+        return riotId_data
+    elif wanted_data == ('riotId_data'):
+        # return placeholder data if no riotId data is found
+        riotId_data = {
+            'gameName': 'Account name',
+            }
+        return riotId_data
+
     if wanted_data == ('summoner_data') and os.path.exists('temp/summonerName.json'):
-        # Load summonerName.json and mastery.json
+        # Load summonerName.json
         with open('temp/summonerName.json') as file:
             summoner_data = json.load(file)
         return summoner_data
     elif wanted_data == ('summoner_data'):
-        # return empty list if no summoner data is found
+        # return placeholder data if no summoner data is found
         summoner_data = {
-            'name': 'SummonerName', 
             'profileIconId': 0
             }
         return summoner_data
 
     if wanted_data == ('mastery_data') and os.path.exists('temp/mastery.json'):
+        # Load mastery.json
         with open('temp/mastery.json') as file:
             mastery_data = json.load(file)
-
-            # temporary filter for displaying mastery level 4 and blow first
-            #for champ in mastery_data:
-             #   if champ['championLevel'] > 4:
-              #      champ['championLevel'] = 0
 
             mastery_data = sorted(mastery_data, key=lambda k: (k['championLevel'], k['championPoints']), 
                                   reverse=True)
         return mastery_data
     
     elif wanted_data == ('mastery_data'):
-        # return empty list if no mastery data is found
+        # return placeholder data if no mastery data is found
         mastery_data = [
             {'championId': 0, 
              'championName': 'No mastery data found',

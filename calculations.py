@@ -2,7 +2,7 @@ import json
 import os
 
 
-def get_mastery_score_by_calculation():
+def calculate_total_mastery_level():
     if not os.path.exists('temp/mastery.json'):
         return 0
     with open('temp/mastery.json', 'r') as json_file:
